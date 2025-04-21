@@ -67,4 +67,12 @@ public class FilmController {
         log.info("Received GET /films/popular?count={} request", count);
         return filmService.getTopFilms(count);
     }
+
+    @GetMapping("/common")
+    public List<FilmDto> getCommonFilms(
+            @RequestParam long userId,
+            @RequestParam long friendId) {
+        log.info("GET common films for userId={} and friendId={}", userId, friendId);
+        return filmService.getCommonFilms(userId, friendId);
+    }
 }

@@ -92,6 +92,10 @@ public class FilmDbStorage implements FilmStorage {
                 .orElseThrow(() -> new NotFoundException("Rating with id " + id + " not found"));
     }
 
+    public Collection<Film> getCommonFilms(long userId, long friendId) {
+        return filmRepository.findCommon(userId, friendId);
+    }
+
     private void validateRatingExists(Rating mpa) {
         if (mpa == null || mpa.getId() == 0) {
             throw new IllegalArgumentException("Film Rating (MPA) is required.");
