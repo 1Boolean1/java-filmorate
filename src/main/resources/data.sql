@@ -20,15 +20,15 @@ VALUES (1, 'G'),
        (4, 'R'),
        (5, 'NC-17');
 
-INSERT INTO USERS (id, email, login, name, birthday)
-VALUES (1, 'test@user.com', 'testlogin', 'Test User Name', '1991-11-11');
+INSERT INTO USERS (email, login, name, birthday)
+VALUES ('test@user.com', 'testlogin', 'Test User Name', '1991-11-11');
 
-INSERT INTO USERS (id, email, login, name, birthday)
-VALUES (2, 'test1@user.com', 'test2login', 'Another User', '1992-11-11');
+INSERT INTO USERS ( email, login, name, birthday)
+VALUES ('test1@user.com', 'test2login', 'Another User', '1992-11-11');
 
-INSERT INTO FILMS (id, NAME, DESCRIPTION, RELEASE_DATE, DURATION, RATING_ID)
-VALUES (1, 'film1', 'its film1', '2010-10-10', '100', '1'),
-       (2, 'film2', 'its film2', '2020-12-20', '200', '2');
+INSERT INTO FILMS (NAME, DESCRIPTION, RELEASE_DATE, DURATION, RATING_ID)
+VALUES ('film1', 'its film1', '2010-10-10', '100', '1'),
+       ('film2', 'its film2', '2020-12-20', '200', '2');
 
 INSERT INTO LIKES(user_id, film_id)
 VALUES (1, 1),
