@@ -134,6 +134,19 @@ public class FilmService {
         return RatingMapper.mapToRatingDto(rating);
     }
 
+    public List<FilmDto> getCommonFilms(long userId, long friendId) {
+        userExists(userId);
+        userExists(friendId);
+        if (userId == friendId) {
+            throw new ConstraintViolationException("Id's can't be the same");
+        }
+        log.info("Getting MPA common films for users: {}, {}", userId, friendId);
+        Collection<Film> films = filmStorage.getCommonFilms(userId, friendId);
+        return films.stream()
+                .map(film -> FilmMapper.mapToFilmDto(film, filmStorage.getLikes(film.getId())))
+                .collect(Collectors.toList());
+    }
+
     private void validateFilm(Film film) {
         if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
             log.warn("Validation failed");
