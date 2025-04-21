@@ -84,4 +84,5 @@ public class FilmController {
         log.info("GET common films for userId={} and friendId={}", userId, friendId);
         return filmService.getCommonFilms(userId, friendId);
     }
+
 }
