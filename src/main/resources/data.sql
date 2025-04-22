@@ -23,6 +23,7 @@ values ('test@user.com', 'testlogin', 'Test User Name', '1991-11-11');
 insert into Users (email, login, name, birthday)
 values ('test1@user.com', 'test2login', 'Another User', '1992-11-11');
 
+
 insert into Rating(rating_id, rating_name)
 values (1, 'G'),
        (2, 'PG'),

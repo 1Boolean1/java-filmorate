@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -67,4 +68,13 @@ public class FilmController {
         log.info("Received GET /films/popular?count={} request", count);
         return filmService.getTopFilms(count);
     }
+
+    //TODO добавить проверку на корректность параметра sortMode
+    @GetMapping("/director/{directorId}")
+    public List<FilmDto> findByDirector(@PathVariable long directorId,
+                                        @RequestParam(name = "sortBy") String sortMode) {
+        log.info("Received GET /films/director/{}?sortBy={} request", directorId, sortMode);
+        return filmService.findByDirector(directorId, sortMode);
+    }
+
 }

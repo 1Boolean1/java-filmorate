@@ -34,9 +34,9 @@ public class FilmRepository extends BaseRepository<Film> {
 
     private static final String FIND_GENRES_FOR_FILMS_QUERY =
             "SELECT fg.film_id, g.id as genre_id, g.name as genre_name " +
-            "FROM genre g " +
-            "JOIN film_genre fg ON g.id = fg.genre_id " +
-            "WHERE fg.film_id IN (:filmIds)";
+                    "FROM genre g " +
+                    "JOIN film_genre fg ON g.id = fg.genre_id " +
+                    "WHERE fg.film_id IN (:filmIds)";
 
     private static final String FIND_DIRECTOR_FOR_FILMS_QUERY = """
             SELECT fd.FILM_ID,
@@ -45,6 +45,28 @@ public class FilmRepository extends BaseRepository<Film> {
               FROM FILM_DIRECTORS fd
               JOIN DIRECTORS d ON (fd.DIRECTOR_ID = d.DIRECTOR_ID)
              WHERE fd.film_id in (:filmIds)
+            """;
+
+    private static final String FIND_BY_DIRECTOR_SORT_BY_LIKES = """
+            SELECT f.*,
+                   r.rating_id as mpa_id,
+                   r.rating_name as mpa_name
+              FROM films AS f
+              JOIN rating AS r ON f.rating_id = r.rating_id
+              JOIN FILM_DIRECTORS fd ON f.ID = fd.FILM_ID
+             WHERE fd.DIRECTOR_ID = ?
+             ORDER BY (SELECT COUNT(1) FROM LIKES l WHERE l.FILM_ID = f.ID) DESC
+            """;
+
+    private static final String FIND_BY_DIRECTOR_SORT_BY_YEAR = """
+                    SELECT f.*,
+                           r.rating_id as mpa_id,
+                           r.rating_name as mpa_name
+                      FROM films AS f
+                      JOIN rating AS r ON f.rating_id = r.rating_id
+                      JOIN FILM_DIRECTORS fd ON f.ID = fd.FILM_ID
+                     WHERE fd.DIRECTOR_ID = ?
+                     ORDER BY f.RELEASE_DATE
             """;
 
     private final JdbcTemplate jdbc;
@@ -234,6 +256,23 @@ public class FilmRepository extends BaseRepository<Film> {
 
     public void removeLike(long filmId, long userId) {
         jdbc.update(REMOVE_LIKE_QUERY, filmId, userId);
+    }
+
+    public List<Film> findByDirector(long directorId, String sortMode) {
+        String sql = "";
+        if (sortMode.equals("likes")) {
+            sql = FIND_BY_DIRECTOR_SORT_BY_LIKES;
+        } else if (sortMode.equals("year")) {
+            sql = FIND_BY_DIRECTOR_SORT_BY_YEAR;
+        }
+
+        List<Film> films = jdbc.query(sql, filmWithRatingMapper, directorId);
+
+        if (!films.isEmpty()) {
+            setGenresForFilms(films);
+            setDirectorForFilm(films);
+        }
+        return films;
     }
 
     private void saveDirector(Film film) {
