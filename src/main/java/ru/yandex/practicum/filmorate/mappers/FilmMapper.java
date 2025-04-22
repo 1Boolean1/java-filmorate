@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.mappers;
 
 import lombok.experimental.UtilityClass;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
@@ -33,6 +34,16 @@ public class FilmMapper {
             film.setGenres(new ArrayList<>());
         }
 
+        if (requestFilm.getDirector() != null) {
+            List<Director> directorsWithIdOnly = requestFilm.getDirector()
+                    .stream()
+                    .filter(d -> d != null && d.getId() != 0)
+                    .collect(Collectors.toList());
+            film.setDirector(directorsWithIdOnly);
+        } else {
+            film.setDirector(new ArrayList<>());
+        }
+
         return film;
     }
 
@@ -48,6 +59,7 @@ public class FilmMapper {
         dto.setMpa(RatingMapper.mapToRatingDto(film.getMpa()));
         dto.setGenres(GenreMapper.mapToGenreDtoList(film.getGenres()));
         dto.setLikes(Optional.ofNullable(likes).orElse(Collections.emptySet()));
+        dto.setDirectors(DirectorMapper.mapToDirectorDtoList(film.getDirector()));
         return dto;
     }
 

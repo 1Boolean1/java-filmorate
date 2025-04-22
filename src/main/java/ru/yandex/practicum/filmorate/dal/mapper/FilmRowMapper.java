@@ -27,6 +27,7 @@ public class FilmRowMapper implements RowMapper<Film> {
         film.setMpa(mpa);
 
         film.setGenres(new ArrayList<>());
+        film.setDirector(new ArrayList<>());
         return film;
     }
 }

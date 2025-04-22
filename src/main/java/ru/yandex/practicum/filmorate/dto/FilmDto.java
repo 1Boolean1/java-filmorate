@@ -18,4 +18,5 @@ public class FilmDto {
     private RatingDto mpa;
     private List<GenreDto> genres = new ArrayList<>();
     private Set<Long> likes = new HashSet<>();
+    private List<DirectorDto> directors = new ArrayList<>();
 }
