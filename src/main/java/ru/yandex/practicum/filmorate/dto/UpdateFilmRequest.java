@@ -11,7 +11,7 @@ public class UpdateFilmRequest {
     private String releaseDate;
     private String duration;
     private Rating ratingId;
-    private Director director;
+    private Director directors;
 
     public boolean hasName() {
         return !(name == null || name.isBlank());

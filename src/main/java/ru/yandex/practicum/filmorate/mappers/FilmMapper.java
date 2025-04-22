@@ -34,14 +34,14 @@ public class FilmMapper {
             film.setGenres(new ArrayList<>());
         }
 
-        if (requestFilm.getDirector() != null) {
-            List<Director> directorsWithIdOnly = requestFilm.getDirector()
+        if (requestFilm.getDirectors() != null) {
+            List<Director> directorsWithIdOnly = requestFilm.getDirectors()
                     .stream()
                     .filter(d -> d != null && d.getId() != 0)
                     .collect(Collectors.toList());
-            film.setDirector(directorsWithIdOnly);
+            film.setDirectors(directorsWithIdOnly);
         } else {
-            film.setDirector(new ArrayList<>());
+            film.setDirectors(new ArrayList<>());
         }
 
         return film;
@@ -59,7 +59,7 @@ public class FilmMapper {
         dto.setMpa(RatingMapper.mapToRatingDto(film.getMpa()));
         dto.setGenres(GenreMapper.mapToGenreDtoList(film.getGenres()));
         dto.setLikes(Optional.ofNullable(likes).orElse(Collections.emptySet()));
-        dto.setDirectors(DirectorMapper.mapToDirectorDtoList(film.getDirector()));
+        dto.setDirectors(DirectorMapper.mapToDirectorDtoList(film.getDirectors()));
         return dto;
     }
 

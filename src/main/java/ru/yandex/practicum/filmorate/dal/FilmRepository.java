@@ -220,6 +220,9 @@ public class FilmRepository extends BaseRepository<Film> {
         deleteGenres(film.getId());
         saveGenres(film);
 
+        deleteFilms(film.getId());
+        saveDirector(film);
+
         return findById(film.getId()).orElseThrow(() -> new IllegalStateException("Updated film not found, id: " + film.getId()));
     }
 
@@ -276,12 +279,12 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     private void saveDirector(Film film) {
-        if (film.getDirector() == null || film.getDirector().isEmpty()) {
+        if (film.getDirectors() == null || film.getDirectors().isEmpty()) {
             return;
         }
         String sql = "INSERT INTO FILM_DIRECTORS (FILM_ID, DIRECTOR_ID) VALUES(?, ?)";
 
-        List<Object[]> batchArgs = film.getDirector().stream()
+        List<Object[]> batchArgs = film.getDirectors().stream()
                 .filter(Objects::nonNull)
                 .filter(director -> director.getId() > 0)
                 .distinct()
@@ -319,8 +322,13 @@ public class FilmRepository extends BaseRepository<Film> {
                 ));
 
         films.forEach(film ->
-                film.setDirector(directorsByFilmId.getOrDefault(film.getId(), Collections.emptyList()))
+                film.setDirectors(directorsByFilmId.getOrDefault(film.getId(), Collections.emptyList()))
         );
+    }
+
+    private void deleteFilms(long filmId) {
+        String sql = "DELETE FROM FILM_DIRECTORS WHERE film_id = ?";
+        jdbc.update(sql, filmId);
     }
 
 }

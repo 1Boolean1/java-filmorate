@@ -11,5 +11,5 @@ public class NewFilmRequest {
     private String releaseDate;
     private String duration;
     private Rating ratingId;
-    private Director director;
+    private Director directors;
 }
