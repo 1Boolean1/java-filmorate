@@ -1,6 +1,8 @@
 package ru.yandex.practicum.filmorate.dal;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -14,6 +16,8 @@ import ru.yandex.practicum.filmorate.model.Rating;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -172,6 +176,25 @@ public class FilmRepository extends BaseRepository<Film> {
         return findById(film.getId()).orElseThrow(() -> new IllegalStateException("Updated film not found, id: " + film.getId()));
     }
 
+    public Map<Long, List<Long>> getAllLikesGroupedByUser() {
+        String sql = "SELECT * FROM Likes";
+
+        return jdbc.query(sql, new ResultSetExtractor<Map<Long, List<Long>>>() {
+            @Override
+            public Map<Long, List<Long>> extractData(ResultSet rs) throws SQLException, DataAccessException {
+                Map<Long, List<Long>> userLikes = new HashMap<>();
+                while (rs.next()) {
+                    long userId = rs.getLong("user_id");
+                    long filmId = rs.getLong("film_id");
+
+                    List<Long> filmIds = userLikes.computeIfAbsent(userId, k -> new ArrayList<>());
+                    filmIds.add(filmId);
+                }
+                return userLikes;
+            }
+        });
+    }
+
     private void deleteGenres(long filmId) {
         String sql = "DELETE FROM film_genre WHERE film_id = ?";
         jdbc.update(sql, filmId);
@@ -193,6 +216,7 @@ public class FilmRepository extends BaseRepository<Film> {
             jdbc.batchUpdate(sql, batchArgs);
         }
     }
+
 
     public Set<Long> getLikes(long filmId) {
         List<Long> likesList = jdbc.queryForList(GET_LIKES_QUERY, Long.class, filmId);

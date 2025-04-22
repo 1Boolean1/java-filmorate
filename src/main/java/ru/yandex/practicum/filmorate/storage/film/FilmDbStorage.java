@@ -9,9 +9,8 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Rating;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 public class FilmDbStorage implements FilmStorage {
@@ -108,5 +107,93 @@ public class FilmDbStorage implements FilmStorage {
                 getGenreById(genre.getId());
             }
         }
+    }
+
+    public Collection<Film> getRecommendations(long targetUserId) {
+        Optional<Long> mostSimilarUserOpt = findUserWithMostCommonLikes(targetUserId);
+
+        if (mostSimilarUserOpt.isEmpty()) {
+            return Collections.emptyList();
+        }
+        long mostSimilarUserId = mostSimilarUserOpt.get();
+
+        Map<Long, List<Long>> allUserLikes = filmRepository.getAllLikesGroupedByUser();
+
+        Set<Long> filmsLikedByTarget = new HashSet<>(allUserLikes.getOrDefault(targetUserId, Collections.emptyList()));
+
+        List<Long> filmsLikedBySimilar = allUserLikes.getOrDefault(mostSimilarUserId, Collections.emptyList());
+
+        List<Long> recommendedFilmIds = filmsLikedBySimilar.stream()
+                .filter(filmId -> !filmsLikedByTarget.contains(filmId))
+                .collect(Collectors.toList());
+
+        if (recommendedFilmIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return recommendedFilmIds.stream()
+                .map(filmId -> {
+                    try {
+                        return getFilmById(filmId);
+                    } catch (NotFoundException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    public Optional<Long> findUserWithMostCommonLikes(long id) {
+        Map<Long, Integer> crossesFilms = findCrosses(id);
+
+        if (crossesFilms == null || crossesFilms.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Optional<Map.Entry<Long, Integer>> maxEntry = crossesFilms.entrySet()
+                .stream()
+                .max(Map.Entry.comparingByValue());
+
+        return maxEntry.map(Map.Entry::getKey);
+    }
+
+
+    private Map<Long, Integer> findCrosses(long targetUserId) {
+        Map<Long, List<Long>> allUserLikes = filmRepository.getAllLikesGroupedByUser();
+
+        List<Long> filmsLikedByTargetUser = allUserLikes.get(targetUserId);
+
+        if (filmsLikedByTargetUser == null || filmsLikedByTargetUser.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Set<Long> targetLikedSet = new HashSet<>(filmsLikedByTargetUser);
+
+        Map<Long, Integer> commonLikesCountMap = new HashMap<>();
+
+        for (Map.Entry<Long, List<Long>> entry : allUserLikes.entrySet()) {
+            long otherUserId = entry.getKey();
+            List<Long> filmsLikedByOtherUser = entry.getValue();
+
+            if (otherUserId == targetUserId) {
+                continue;
+            }
+
+            if (filmsLikedByOtherUser == null || filmsLikedByOtherUser.isEmpty()) {
+                continue;
+            }
+
+            int commonCount = 0;
+            for (Long filmLikedByOther : filmsLikedByOtherUser) {
+                if (targetLikedSet.contains(filmLikedByOther)) {
+                    commonCount++;
+                }
+            }
+
+            if (commonCount > 0) {
+                commonLikesCountMap.put(otherUserId, commonCount);
+            }
+        }
+        return commonLikesCountMap;
     }
 }

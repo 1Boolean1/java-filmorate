@@ -134,6 +134,16 @@ public class FilmService {
         return RatingMapper.mapToRatingDto(rating);
     }
 
+
+    public List<FilmDto> getRecommendations(long id) {
+        userExists(id);
+        log.info("Getting recommendations films for user with id = {}", id);
+        Collection<Film> films = filmStorage.getRecommendations(id);
+        return films.stream()
+                .map(film -> FilmMapper.mapToFilmDto(film, filmStorage.getLikes(film.getId())))
+                .collect(Collectors.toList());
+    }
+
     private void validateFilm(Film film) {
         if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
             log.warn("Validation failed");
