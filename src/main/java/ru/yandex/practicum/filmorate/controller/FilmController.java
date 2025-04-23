@@ -63,8 +63,10 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public List<FilmDto> getTopFilms(@RequestParam(defaultValue = "10") @Positive(message = "Count must be positive") int count) {
-        log.info("Received GET /films/popular?count={} request", count);
-        return filmService.getTopFilms(count);
+    public List<FilmDto> getTopFilms(@RequestParam(defaultValue = "10") @Positive(message = "Count must be positive") int count,
+                                     @RequestParam @Positive(message = "genreId must be positive") int genreId,
+                                     @RequestParam @Positive(message = "year must be positive") int year) {
+        log.info("Received GET /films/popular?count={}&genreId={}&year={} request", count, genreId, year);
+        return filmService.getTopFilms(count, genreId, year);
     }
 }

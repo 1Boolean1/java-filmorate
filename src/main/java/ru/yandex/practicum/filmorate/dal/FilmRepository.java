@@ -30,6 +30,10 @@ public class FilmRepository extends BaseRepository<Film> {
     private static final String GET_LIKES_QUERY = "SELECT user_id FROM Likes WHERE film_id = ?";
     private static final String ADD_LIKE_QUERY = "INSERT INTO Likes (user_id, film_id) VALUES (?, ?)";
     private static final String REMOVE_LIKE_QUERY = "DELETE FROM Likes WHERE film_id = ? AND user_id = ?";
+    private static final String GET_MOST_POPULAR_QUERY = "SELECT f.*, r.rating_id AS mpa_id, r.rating_name AS mpa_name " +
+            "FROM films AS f JOIN rating AS r on f.rating_id = r.rating_id JOIN film_genre AS fg ON f.id = fg.film_id " +
+            "JOIN likes AS l ON f.id = l.film_id WHERE fg.genre_id = ? AND EXTRACT(YEAR FROM f.release_date) = ? " +
+            "GROUP BY f.id, r.rating_id, r.rating_name ORDER BY COUNT(l.user_id) DESC LIMIT ?;";
 
     private static final String FIND_GENRES_FOR_FILMS_QUERY =
             "SELECT fg.film_id, g.id as genre_id, g.name as genre_name " +
@@ -93,7 +97,7 @@ public class FilmRepository extends BaseRepository<Film> {
         if (films.isEmpty()) {
             return Optional.empty();
         } else {
-            Film film = films.get(0);
+            Film film = films.getFirst();
             setGenresForFilms(List.of(film));
             return Optional.of(film);
         }
@@ -205,5 +209,11 @@ public class FilmRepository extends BaseRepository<Film> {
 
     public void removeLike(long filmId, long userId) {
         jdbc.update(REMOVE_LIKE_QUERY, filmId, userId);
+    }
+
+    public List<Film> getTopFilms(int count, int genreId, int year) {
+        List<Film> films = jdbc.query(GET_MOST_POPULAR_QUERY, filmWithRatingMapper, genreId, year, count);
+        setGenresForFilms(films);
+        return films;
     }
 }
