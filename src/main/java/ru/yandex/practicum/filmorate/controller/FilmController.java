@@ -67,4 +67,11 @@ public class FilmController {
         log.info("Received GET /films/popular?count={} request", count);
         return filmService.getTopFilms(count);
     }
+
+    @DeleteMapping("/{filmId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFilm(@PathVariable long filmId) {
+        log.info("Received DELETE /films/{} request", filmId);
+        filmService.deleteFilm(filmId);
+    }
 }
