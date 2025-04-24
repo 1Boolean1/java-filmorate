@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.dto.RatingDto;
 import ru.yandex.practicum.filmorate.exception.ConstraintViolationException;
+import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.mappers.GenreMapper;
@@ -132,6 +133,20 @@ public class FilmService {
         log.info("Getting MPA rating by id: {}", id);
         Rating rating = filmStorage.getRatingById(id);
         return RatingMapper.mapToRatingDto(rating);
+    }
+
+    @Transactional
+    public void deleteFilm(long filmId) {
+        FilmDto filmDto = getFilmById(filmId);
+        log.info("Deleting film: {}", filmDto);
+
+        boolean isDeleted = filmStorage.deleteFilm(filmId);
+
+        if (isDeleted) {
+            log.info("Film deleted successfully");
+        } else {
+            throw new InternalServerException("Film was not deleted due to internal error.");
+        }
     }
 
     private void validateFilm(Film film) {

@@ -38,6 +38,11 @@ public class UserDbStorage implements UserStorage {
         return repository.findById(userId).orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
     }
 
+    @Override
+    public boolean deleteUser(long userId) {
+        return repository.deleteUser(userId);
+    }
+
     public Set<Long> getFriends(long userId) {
         return repository.getFriends(userId);
     }

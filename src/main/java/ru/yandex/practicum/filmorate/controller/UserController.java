@@ -72,5 +72,12 @@ public class UserController {
         log.info("getFriends");
         return userService.getFriends(id);
     }
+
+    @DeleteMapping("/{userId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable int userId) {
+        log.info("Recieved DELETE /users/{} request", userId);
+        userService.deleteUser(userId);
+    }
 }
 

@@ -36,6 +36,7 @@ public class FilmRepository extends BaseRepository<Film> {
                     "FROM genre g " +
                     "JOIN film_genre fg ON g.id = fg.genre_id " +
                     "WHERE fg.film_id IN (:filmIds)";
+    private static final String DELETE_FILM_QUERY = "DELETE FROM Films WHERE id = ?";
 
     private final JdbcTemplate jdbc;
     private final NamedParameterJdbcTemplate namedJdbcTemplate;
@@ -170,6 +171,10 @@ public class FilmRepository extends BaseRepository<Film> {
         saveGenres(film);
 
         return findById(film.getId()).orElseThrow(() -> new IllegalStateException("Updated film not found, id: " + film.getId()));
+    }
+
+    public boolean deleteFilm(long id) {
+        return delete(DELETE_FILM_QUERY, id);
     }
 
     private void deleteGenres(long filmId) {
