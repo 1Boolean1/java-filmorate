@@ -14,4 +14,6 @@ public interface UserStorage {
     User updateUser(@RequestBody User user);
 
     User getUserById(long userId);
+
+    boolean deleteUser(long userId);
 }

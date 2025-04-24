@@ -1,3 +1,18 @@
+DELETE
+FROM FILMS;
+DELETE
+FROM LIKES;
+DELETE
+FROM GENRE;
+DELETE
+FROM RATING;
+DELETE
+FROM USERS;
+DELETE
+FROM FILM_GENRE;
+DELETE
+FROM FRIENDSHIP;
+
 INSERT INTO RATING(rating_id, rating_name)
 VALUES (1, 'G'),
        (2, 'PG'),
@@ -29,6 +44,18 @@ VALUES (1, 1),
        (3, 1),
        (3, 2),
        (3, 4);
+       
+INSERT INTO USERS ( email, login, name, birthday)
+VALUES ('test1@user.com', 'test2login', 'Another User', '1992-11-11');
+
+INSERT INTO FILMS (NAME, DESCRIPTION, RELEASE_DATE, DURATION, RATING_ID)
+VALUES ('film1', 'its film1', '2010-10-10', '100', '1'),
+       ('film2', 'its film2', '2020-12-20', '200', '2');
+
+INSERT INTO LIKES(user_id, film_id)
+VALUES (1, 1),
+       (2, 1),
+       (2, 2);
 
 INSERT INTO GENRE (name)
 VALUES ('Комедия'),
