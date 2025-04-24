@@ -210,4 +210,9 @@ public class FilmDbStorage implements FilmStorage {
         }
         return commonLikesCountMap;
     }
+
+    public List<Film> findByDirector(long directorId, String sortMode) {
+        return filmRepository.findByDirector(directorId, sortMode);
+    }
+
 }

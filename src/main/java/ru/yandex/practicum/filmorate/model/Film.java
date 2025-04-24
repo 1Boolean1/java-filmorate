@@ -23,4 +23,5 @@ public class Film {
     @NotNull(message = "Rating cannot be null")
     private Rating mpa;
     private List<Genre> genres = new ArrayList<>();
+    private List<Director> directors = new ArrayList<>();
 }

@@ -10,6 +10,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mapper.FilmRowMapper;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Rating;
@@ -53,6 +54,37 @@ public class FilmRepository extends BaseRepository<Film> {
                     "WHERE fg.film_id IN (:filmIds)";
     private static final String DELETE_FILM_QUERY = "DELETE FROM Films WHERE id = ?";
 
+    private static final String FIND_DIRECTOR_FOR_FILMS_QUERY = """
+            SELECT fd.FILM_ID,
+              	   d.DIRECTOR_ID,
+              	   d.NAME as DIRECTOR_NAME
+              FROM FILM_DIRECTORS fd
+              JOIN DIRECTORS d ON (fd.DIRECTOR_ID = d.DIRECTOR_ID)
+             WHERE fd.film_id in (:filmIds)
+            """;
+
+    private static final String FIND_BY_DIRECTOR_SORT_BY_LIKES = """
+            SELECT f.*,
+                   r.rating_id as mpa_id,
+                   r.rating_name as mpa_name
+              FROM films AS f
+              JOIN rating AS r ON f.rating_id = r.rating_id
+              JOIN FILM_DIRECTORS fd ON f.ID = fd.FILM_ID
+             WHERE fd.DIRECTOR_ID = ?
+             ORDER BY (SELECT COUNT(1) FROM LIKES l WHERE l.FILM_ID = f.ID) DESC
+            """;
+
+    private static final String FIND_BY_DIRECTOR_SORT_BY_YEAR = """
+                    SELECT f.*,
+                           r.rating_id as mpa_id,
+                           r.rating_name as mpa_name
+                      FROM films AS f
+                      JOIN rating AS r ON f.rating_id = r.rating_id
+                      JOIN FILM_DIRECTORS fd ON f.ID = fd.FILM_ID
+                     WHERE fd.DIRECTOR_ID = ?
+                     ORDER BY f.RELEASE_DATE
+            """;
+
     private final JdbcTemplate jdbc;
     private final NamedParameterJdbcTemplate namedJdbcTemplate;
     private FilmRowMapper filmMapper;
@@ -67,11 +99,28 @@ public class FilmRepository extends BaseRepository<Film> {
         }
     }
 
+    private static class FilmDirectorRelation {
+        final long filmId;
+        final Director director;
+
+        FilmDirectorRelation(long filmId, Director director) {
+            this.filmId = filmId;
+            this.director = director;
+        }
+    }
+
     private final RowMapper<FilmGenreRelation> filmGenreRelationRowMapper = (rs, rowNum) -> {
         Genre genre = new Genre();
         genre.setId(rs.getInt("genre_id"));
         genre.setName(rs.getString("genre_name"));
         return new FilmGenreRelation(rs.getLong("film_id"), genre);
+    };
+
+    private final RowMapper<FilmDirectorRelation> filmDirectorRelationRowMapper = (rs, rowNum) -> {
+        Director director = new Director();
+        director.setId(rs.getLong("director_id"));
+        director.setName(rs.getString("director_name"));
+        return new FilmDirectorRelation(rs.getLong("film_id"), director);
     };
 
     public FilmRepository(JdbcTemplate jdbc,
@@ -99,6 +148,7 @@ public class FilmRepository extends BaseRepository<Film> {
 
         if (!films.isEmpty()) {
             setGenresForFilms(films);
+            setDirectorForFilm(films);
         }
         return films;
     }
@@ -119,6 +169,7 @@ public class FilmRepository extends BaseRepository<Film> {
         } else {
             Film film = films.getFirst();
             setGenresForFilms(List.of(film));
+            setDirectorForFilm(List.of(film));
             return Optional.of(film);
         }
     }
@@ -172,7 +223,7 @@ public class FilmRepository extends BaseRepository<Film> {
         film.setId(id);
 
         saveGenres(film);
-
+        saveDirector(film);
         return findById(id).orElseThrow(() -> new IllegalStateException("Saved film not found, id: " + id));
     }
 
@@ -192,6 +243,9 @@ public class FilmRepository extends BaseRepository<Film> {
 
         deleteGenres(film.getId());
         saveGenres(film);
+
+        deleteFilms(film.getId());
+        saveDirector(film);
 
         return findById(film.getId()).orElseThrow(() -> new IllegalStateException("Updated film not found, id: " + film.getId()));
     }
@@ -279,6 +333,77 @@ public class FilmRepository extends BaseRepository<Film> {
         List<Film> films = jdbc.query(queryBuilder.toString(), filmWithRatingMapper, filterParams.toArray());
         setGenresForFilms(films);
         return films;
+    }
+
+
+    public List<Film> findByDirector(long directorId, String sortMode) {
+        String sql = "";
+        if (sortMode.equals("likes")) {
+            sql = FIND_BY_DIRECTOR_SORT_BY_LIKES;
+        } else if (sortMode.equals("year")) {
+            sql = FIND_BY_DIRECTOR_SORT_BY_YEAR;
+        }
+
+        List<Film> films = jdbc.query(sql, filmWithRatingMapper, directorId);
+
+        if (!films.isEmpty()) {
+            setGenresForFilms(films);
+            setDirectorForFilm(films);
+        }
+        return films;
+    }
+
+    private void saveDirector(Film film) {
+        if (film.getDirectors() == null || film.getDirectors().isEmpty()) {
+            return;
+        }
+        String sql = "INSERT INTO FILM_DIRECTORS (FILM_ID, DIRECTOR_ID) VALUES(?, ?)";
+
+        List<Object[]> batchArgs = film.getDirectors().stream()
+                .filter(Objects::nonNull)
+                .filter(director -> director.getId() > 0)
+                .distinct()
+                .map(director -> new Object[]{film.getId(), director.getId()})
+                .collect(Collectors.toList());
+
+        if (!batchArgs.isEmpty()) {
+            jdbc.batchUpdate(sql, batchArgs);
+        }
+    }
+
+    private void setDirectorForFilm(List<Film> films) {
+        List<Long> filmIds = films.stream()
+                .map(Film::getId)
+                .collect(Collectors.toList());
+
+        if (filmIds.isEmpty()) {
+            return;
+        }
+
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("filmIds", filmIds);
+
+
+        List<FilmDirectorRelation> relations = namedJdbcTemplate.query(
+                FIND_DIRECTOR_FOR_FILMS_QUERY,
+                parameters,
+                filmDirectorRelationRowMapper
+        );
+
+        Map<Long, List<Director>> directorsByFilmId = relations.stream()
+                .collect(groupingBy(
+                        relation -> relation.filmId,
+                        mapping(relation -> relation.director, toList())
+                ));
+
+        films.forEach(film ->
+                film.setDirectors(directorsByFilmId.getOrDefault(film.getId(), Collections.emptyList()))
+        );
+    }
+
+    private void deleteFilms(long filmId) {
+        String sql = "DELETE FROM FILM_DIRECTORS WHERE film_id = ?";
+        jdbc.update(sql, filmId);
     }
 
 }

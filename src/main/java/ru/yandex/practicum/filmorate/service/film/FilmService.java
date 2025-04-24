@@ -183,4 +183,13 @@ public class FilmService {
     private void filmExists(long filmId) {
         filmStorage.getFilmById(filmId);
     }
+
+    public List<FilmDto> findByDirector(long directorId, String sortMode) {
+        log.info("Getting films by director with id: {} and sort mode {}", directorId, sortMode);
+        Collection<Film> films = filmStorage.findByDirector(directorId, sortMode);
+        return films.stream()
+                .map(film -> FilmMapper.mapToFilmDto(film, filmStorage.getLikes(film.getId())))
+                .collect(Collectors.toList());
+    }
+
 }

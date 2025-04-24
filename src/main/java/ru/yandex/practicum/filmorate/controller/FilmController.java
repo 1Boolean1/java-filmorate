@@ -85,4 +85,11 @@ public class FilmController {
         return filmService.getCommonFilms(userId, friendId);
     }
 
+    @GetMapping("/director/{directorId}")
+    public List<FilmDto> findByDirector(@PathVariable long directorId,
+                                        @RequestParam(name = "sortBy") String sortMode) {
+        log.info("Received GET /films/director/{}?sortBy={} request", directorId, sortMode);
+        return filmService.findByDirector(directorId, sortMode);
+    }
+
 }
