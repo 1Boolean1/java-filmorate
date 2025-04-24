@@ -4,10 +4,12 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.EmptyFieldException;
+import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mappers.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
@@ -126,6 +128,20 @@ public class UserService {
     public UserDto getUserById(@PathVariable long id) {
         log.info("getUserById");
         return UserMapper.mapToUserDto(userDbStorage.getUserById(id));
+    }
+
+    @Transactional
+    public void deleteUser(long userId) {
+        UserDto userDto = getUserById(userId);
+        log.info("Deleting user: {}", userDto);
+
+        boolean isDeleted = userDbStorage.deleteUser(userId);
+
+        if (isDeleted) {
+            log.info("User deleted successfully");
+        } else {
+            throw new InternalServerException("User was not deleted due to internal server error");
+        }
     }
 
     private boolean isExistsUser(User user) {

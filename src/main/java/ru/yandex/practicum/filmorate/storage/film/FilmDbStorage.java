@@ -61,6 +61,11 @@ public class FilmDbStorage implements FilmStorage {
                 .orElseThrow(() -> new NotFoundException("Film with id " + filmId + " not found"));
     }
 
+    @Override
+    public boolean deleteFilm(long filmId) {
+        return filmRepository.deleteFilm(filmId);
+    }
+
     public Set<Long> getLikes(long filmId) {
         getFilmById(filmId);
         return filmRepository.getLikes(filmId);
@@ -92,8 +97,13 @@ public class FilmDbStorage implements FilmStorage {
                 .orElseThrow(() -> new NotFoundException("Rating with id " + id + " not found"));
     }
 
+
     public Collection<Film> getCommonFilms(long userId, long friendId) {
         return filmRepository.findCommon(userId, friendId);
+    }
+
+    public List<Film> getTopFilms(int count, int genreId, int year) {
+        return filmRepository.getTopFilms(count, genreId, year);
     }
 
     private void validateRatingExists(Rating mpa) {

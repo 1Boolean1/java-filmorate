@@ -38,4 +38,11 @@ public class ErrorHandler {
         log.warn("constraint violation");
         return new ErrorResponse(e.getMessage());
     }
+
+    @ExceptionHandler(InternalServerException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleException(Exception e) {
+        log.error("Ошибка сервера: {}", e.getMessage());
+        return new ErrorResponse("Внутренняя ошибка сервера: " + e.getMessage());
+    }
 }

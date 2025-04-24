@@ -47,6 +47,7 @@ public class FilmRepository extends BaseRepository<Film> {
                     "FROM genre g " +
                     "JOIN film_genre fg ON g.id = fg.genre_id " +
                     "WHERE fg.film_id IN (:filmIds)";
+    private static final String DELETE_FILM_QUERY = "DELETE FROM Films WHERE id = ?";
 
     private final JdbcTemplate jdbc;
     private final NamedParameterJdbcTemplate namedJdbcTemplate;
@@ -112,7 +113,7 @@ public class FilmRepository extends BaseRepository<Film> {
         if (films.isEmpty()) {
             return Optional.empty();
         } else {
-            Film film = films.get(0);
+            Film film = films.getFirst();
             setGenresForFilms(List.of(film));
             return Optional.of(film);
         }
@@ -191,6 +192,10 @@ public class FilmRepository extends BaseRepository<Film> {
         return findById(film.getId()).orElseThrow(() -> new IllegalStateException("Updated film not found, id: " + film.getId()));
     }
 
+    public boolean deleteFilm(long id) {
+        return delete(DELETE_FILM_QUERY, id);
+    }
+
     private void deleteGenres(long filmId) {
         String sql = "DELETE FROM film_genre WHERE film_id = ?";
         jdbc.update(sql, filmId);
@@ -225,4 +230,32 @@ public class FilmRepository extends BaseRepository<Film> {
     public void removeLike(long filmId, long userId) {
         jdbc.update(REMOVE_LIKE_QUERY, filmId, userId);
     }
+
+    public List<Film> getTopFilms(int count, Integer genreId, Integer year) {
+
+        StringBuilder queryBuilder = new StringBuilder("SELECT f.*, r.rating_id AS mpa_id, r.rating_name AS mpa_name " +
+                "FROM films AS f JOIN rating AS r on f.rating_id = r.rating_id " +
+                "JOIN film_genre AS fg ON f.id = fg.film_id " +
+                "JOIN likes AS l ON f.id = l.film_id WHERE 1=1");
+
+        List<Integer> filterParams = new ArrayList<>();
+
+        if (genreId != -1) {
+            queryBuilder.append(" AND fg.genre_id = ?");
+            filterParams.add(genreId);
+        }
+
+        if (year != -1) {
+            queryBuilder.append(" AND EXTRACT(YEAR FROM f.release_date) = ?");
+            filterParams.add(year);
+        }
+
+        queryBuilder.append(" GROUP BY f.id, r.rating_id, r.rating_name ORDER BY COUNT(l.user_id) DESC LIMIT ?;");
+        filterParams.add(count);
+
+        List<Film> films = jdbc.query(queryBuilder.toString(), filmWithRatingMapper, filterParams.toArray());
+        setGenresForFilms(films);
+        return films;
+    }
+
 }
