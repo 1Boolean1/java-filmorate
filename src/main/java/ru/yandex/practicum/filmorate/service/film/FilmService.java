@@ -142,6 +142,7 @@ public class FilmService {
         return films.stream()
                 .map(film -> FilmMapper.mapToFilmDto(film, filmStorage.getLikes(film.getId())))
                 .collect(Collectors.toList());
+    }
 
     @Transactional
     public void deleteFilm(long filmId) {
