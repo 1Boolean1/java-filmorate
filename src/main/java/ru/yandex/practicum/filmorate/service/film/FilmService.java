@@ -159,7 +159,6 @@ public class FilmService {
 
     }
 
-
     public List<FilmDto> getRecommendations(long id) {
         userExists(id);
         log.info("Getting recommendations films for user with id = {}", id);
