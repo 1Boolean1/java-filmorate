@@ -30,10 +30,6 @@ public class FilmRepository extends BaseRepository<Film> {
     private static final String GET_LIKES_QUERY = "SELECT user_id FROM Likes WHERE film_id = ?";
     private static final String ADD_LIKE_QUERY = "INSERT INTO Likes (user_id, film_id) VALUES (?, ?)";
     private static final String REMOVE_LIKE_QUERY = "DELETE FROM Likes WHERE film_id = ? AND user_id = ?";
-    private static final String GET_MOST_POPULAR_QUERY = "SELECT f.*, r.rating_id AS mpa_id, r.rating_name AS mpa_name " +
-            "FROM films AS f JOIN rating AS r on f.rating_id = r.rating_id JOIN film_genre AS fg ON f.id = fg.film_id " +
-            "JOIN likes AS l ON f.id = l.film_id WHERE fg.genre_id = ? AND EXTRACT(YEAR FROM f.release_date) = ? " +
-            "GROUP BY f.id, r.rating_id, r.rating_name ORDER BY COUNT(l.user_id) DESC LIMIT ?;";
 
     private static final String FIND_GENRES_FOR_FILMS_QUERY =
             "SELECT fg.film_id, g.id as genre_id, g.name as genre_name " +
@@ -211,9 +207,31 @@ public class FilmRepository extends BaseRepository<Film> {
         jdbc.update(REMOVE_LIKE_QUERY, filmId, userId);
     }
 
-    public List<Film> getTopFilms(int count, int genreId, int year) {
-        List<Film> films = jdbc.query(GET_MOST_POPULAR_QUERY, filmWithRatingMapper, genreId, year, count);
+    public List<Film> getTopFilms(int count, Integer genreId, Integer year) {
+
+        StringBuilder queryBuilder = new StringBuilder("SELECT f.*, r.rating_id AS mpa_id, r.rating_name AS mpa_name " +
+                "FROM films AS f JOIN rating AS r on f.rating_id = r.rating_id " +
+                "JOIN film_genre AS fg ON f.id = fg.film_id " +
+                "JOIN likes AS l ON f.id = l.film_id WHERE 1=1");
+
+        List<Integer> filterParams = new ArrayList<>();
+
+        if (genreId != -1) {
+            queryBuilder.append(" AND fg.genre_id = ?");
+            filterParams.add(genreId);
+        }
+
+        if (year != -1) {
+            queryBuilder.append(" AND EXTRACT(YEAR FROM f.release_date) = ?");
+            filterParams.add(year);
+        }
+
+        queryBuilder.append(" GROUP BY f.id, r.rating_id, r.rating_name ORDER BY COUNT(l.user_id) DESC LIMIT ?;");
+        filterParams.add(count);
+
+        List<Film> films = jdbc.query(queryBuilder.toString(), filmWithRatingMapper, filterParams.toArray());
         setGenresForFilms(films);
         return films;
     }
+
 }

@@ -93,12 +93,6 @@ public class FilmService {
         if (count <= 0) {
             throw new ValidationException("Count parameter must be positive.");
         }
-        if (genreId <= 0) {
-            throw new ValidationException("genreId parameter must be positive.");
-        }
-        if (year <= 0) {
-            throw new ValidationException("year parameter must be positive.");
-        }
 
         return filmStorage.getTopFilms(count, genreId, year)
                 .stream()
