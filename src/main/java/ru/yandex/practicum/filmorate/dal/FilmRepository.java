@@ -161,6 +161,14 @@ public class FilmRepository extends BaseRepository<Film> {
         return films;
     }
 
+    public List<Film> findCommon(long userId, long filmId) {
+        List<Film> films = jdbc.query(GET_COMMON_FILMS, filmWithRatingMapper, userId, filmId);
+        if (!films.isEmpty()) {
+            setGenresForFilms(films);
+        }
+        return films;
+    }
+
     public Optional<Film> findById(long id) {
         List<Film> films = jdbc.query(FIND_BY_ID_QUERY, filmWithRatingMapper, id);
 
@@ -335,7 +343,6 @@ public class FilmRepository extends BaseRepository<Film> {
         return films;
     }
 
-
     public List<Film> findByDirector(long directorId, String sortMode) {
         String sql = "";
         if (sortMode.equals("likes")) {
@@ -407,3 +414,4 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
 }
+

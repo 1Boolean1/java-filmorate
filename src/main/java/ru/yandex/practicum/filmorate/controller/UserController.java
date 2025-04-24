@@ -83,7 +83,7 @@ public class UserController {
         log.info("Recieved DELETE /users/{} request", userId);
         userService.deleteUser(userId);
     }
-
+  
     @GetMapping("/{id}/recommendations")
     public Collection<FilmDto> getRecommendations(@PathVariable long id) {
         log.info("get recommendations");
