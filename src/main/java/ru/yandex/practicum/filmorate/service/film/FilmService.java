@@ -23,7 +23,6 @@ import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -90,23 +89,19 @@ public class FilmService {
         log.info("Like removed successfully");
     }
 
-    public List<FilmDto> getTopFilms(int count) {
-        log.info("Getting top {} popular films", count);
+    public List<FilmDto> getTopFilms(int count, int genreId, int year) {
+        log.info("Getting top {} popular films with genreId = {} and release year = {}", count, genreId, year);
         if (count <= 0) {
             throw new ValidationException("Count parameter must be positive.");
         }
-        Collection<Film> allFilms = filmStorage.getFilms();
 
-        return allFilms.stream()
+        return filmStorage.getTopFilms(count, genreId, year)
+                .stream()
                 .map(film -> {
                     Set<Long> likes = filmStorage.getLikes(film.getId());
-                    return Map.entry(film, likes.size());
+                    return FilmMapper.mapToFilmDto(film, likes);
                 })
-                .sorted(Map.Entry.<Film, Integer>comparingByValue().reversed())
-                .limit(count)
-                .map(Map.Entry::getKey)
-                .map(film -> FilmMapper.mapToFilmDto(film, filmStorage.getLikes(film.getId())))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public Collection<GenreDto> getGenres() {
