@@ -14,4 +14,6 @@ public interface FilmStorage {
     Film updateFilm(@RequestBody Film film);
 
     Film getFilmById(long filmId);
+
+    boolean deleteFilm(long filmId);
 }

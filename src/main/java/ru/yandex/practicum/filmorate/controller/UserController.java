@@ -82,5 +82,12 @@ public class UserController {
         log.info("get recommendations");
         return filmService.getRecommendations(id);
     }
+  
+    @DeleteMapping("/{userId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable int userId) {
+        log.info("Recieved DELETE /users/{} request", userId);
+        userService.deleteUser(userId);
+    }
 }
 

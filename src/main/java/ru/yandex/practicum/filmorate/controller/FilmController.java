@@ -63,8 +63,25 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public List<FilmDto> getTopFilms(@RequestParam(defaultValue = "10") @Positive(message = "Count must be positive") int count) {
-        log.info("Received GET /films/popular?count={} request", count);
-        return filmService.getTopFilms(count);
+    public List<FilmDto> getTopFilms(@RequestParam(defaultValue = "10") @Positive(message = "Count must be positive") int count,
+                                     @RequestParam(defaultValue = "-1") int genreId,
+                                     @RequestParam(defaultValue = "-1") int year) {
+        log.info("Received GET /films/popular?count={}&genreId={}&year={} request", count, genreId, year);
+        return filmService.getTopFilms(count, genreId, year);
+    }
+
+    @DeleteMapping("/{filmId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFilm(@PathVariable long filmId) {
+        log.info("Received DELETE /films/{} request", filmId);
+        filmService.deleteFilm(filmId);
+    }
+
+    @GetMapping("/common")
+    public List<FilmDto> getCommonFilms(
+            @RequestParam long userId,
+            @RequestParam long friendId) {
+        log.info("GET common films for userId={} and friendId={}", userId, friendId);
+        return filmService.getCommonFilms(userId, friendId);
     }
 }
