@@ -36,22 +36,22 @@ public class FilmRepository extends BaseRepository<Film> {
     private static final String ADD_LIKE_QUERY = "INSERT INTO Likes (user_id, film_id) VALUES (?, ?)";
     private static final String REMOVE_LIKE_QUERY = "DELETE FROM Likes WHERE film_id = ? AND user_id = ?";
     private static final String GET_COMMON_FILMS = "SELECT f.*, r.rating_id as mpa_id, r.rating_name as mpa_name " +
-            "FROM Films f " +
-            "JOIN rating AS r ON f.rating_id = r.rating_id " +
-            "JOIN Likes l ON f.id = l.film_id " +
-            "WHERE l.film_id IN ( " +
-            "    SELECT film_id FROM Likes WHERE user_id = ? " +
-            "    INTERSECT " +
-            "    SELECT film_id FROM Likes WHERE user_id = ? " +
-            ") " +
-            "GROUP BY f.id " +
-            "ORDER BY COUNT(l.user_id) DESC";
+                                                   "FROM Films f " +
+                                                   "JOIN rating AS r ON f.rating_id = r.rating_id " +
+                                                   "JOIN Likes l ON f.id = l.film_id " +
+                                                   "WHERE l.film_id IN ( " +
+                                                   "    SELECT film_id FROM Likes WHERE user_id = ? " +
+                                                   "    INTERSECT " +
+                                                   "    SELECT film_id FROM Likes WHERE user_id = ? " +
+                                                   ") " +
+                                                   "GROUP BY f.id " +
+                                                   "ORDER BY COUNT(l.user_id) DESC";
 
     private static final String FIND_GENRES_FOR_FILMS_QUERY =
             "SELECT fg.film_id, g.id as genre_id, g.name as genre_name " +
-                    "FROM genre g " +
-                    "JOIN film_genre fg ON g.id = fg.genre_id " +
-                    "WHERE fg.film_id IN (:filmIds)";
+            "FROM genre g " +
+            "JOIN film_genre fg ON g.id = fg.genre_id " +
+            "WHERE fg.film_id IN (:filmIds)";
     private static final String DELETE_FILM_QUERY = "DELETE FROM Films WHERE id = ?";
 
     private static final String FIND_DIRECTOR_FOR_FILMS_QUERY = """
@@ -312,9 +312,10 @@ public class FilmRepository extends BaseRepository<Film> {
     public List<Film> getTopFilms(int count, Integer genreId, Integer year) {
 
         StringBuilder queryBuilder = new StringBuilder("SELECT f.*, r.rating_id AS mpa_id, r.rating_name AS mpa_name " +
-                "FROM films AS f JOIN rating AS r on f.rating_id = r.rating_id " +
-                "JOIN film_genre AS fg ON f.id = fg.film_id " +
-                "JOIN likes AS l ON f.id = l.film_id WHERE 1=1");
+                                                       "FROM films AS f JOIN rating AS r on f.rating_id = r.rating_id " +
+                                                       "JOIN film_genre AS fg ON f.id = fg.film_id " +
+                                                       "LEFT JOIN likes AS l ON f.id = l.film_id WHERE 1=1"
+        );
 
         List<Integer> filterParams = new ArrayList<>();
 
