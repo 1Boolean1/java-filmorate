@@ -4,7 +4,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -52,7 +51,7 @@ public class FilmRepository extends BaseRepository<Film> {
             "SELECT fg.film_id, g.id as genre_id, g.name as genre_name " +
                     "FROM genre g " +
                     "JOIN film_genre fg ON g.id = fg.genre_id " +
-                    "WHERE fg.film_id IN (:filmIds)";
+                    "WHERE fg.film_id";
     private static final String DELETE_FILM_QUERY = "DELETE FROM Films WHERE id = ?";
 
     private static final String FIND_DIRECTOR_FOR_FILMS_QUERY = """
@@ -61,7 +60,7 @@ public class FilmRepository extends BaseRepository<Film> {
               	   d.NAME as DIRECTOR_NAME
               FROM FILM_DIRECTORS fd
               JOIN DIRECTORS d ON (fd.DIRECTOR_ID = d.DIRECTOR_ID)
-             WHERE fd.film_id in (:filmIds)
+             WHERE fd.film_id
             """;
 
     private static final String FIND_BY_DIRECTOR_SORT_BY_LIKES = """
@@ -96,8 +95,6 @@ public class FilmRepository extends BaseRepository<Film> {
               LEFT JOIN DIRECTORS d ON fd.DIRECTOR_ID = d.DIRECTOR_ID
              WHERE
             """;
-
-    private final JdbcTemplate jdbc;
     private final NamedParameterJdbcTemplate namedJdbcTemplate;
     private FilmRowMapper filmMapper;
 
@@ -139,7 +136,6 @@ public class FilmRepository extends BaseRepository<Film> {
                           NamedParameterJdbcTemplate namedJdbcTemplate,
                           FilmRowMapper filmMapper) {
         super(jdbc, filmMapper);
-        this.jdbc = jdbc;
         this.namedJdbcTemplate = namedJdbcTemplate;
         this.filmMapper = filmMapper;
     }
@@ -188,23 +184,27 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     private void setGenresForFilms(List<Film> films) {
+        if (films == null || films.isEmpty()) {
+            return;
+        }
         List<Long> filmIds = films.stream()
                 .map(Film::getId)
+                .distinct()
                 .collect(Collectors.toList());
 
         if (filmIds.isEmpty()) {
             return;
         }
 
-        MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("filmIds", filmIds);
+        String placeholders = String.join(",", Collections.nCopies(filmIds.size(), "?"));
+        String finalSql = FIND_GENRES_FOR_FILMS_QUERY + " IN (" + placeholders + ")";
 
-
-        List<FilmGenreRelation> relations = namedJdbcTemplate.query(
-                FIND_GENRES_FOR_FILMS_QUERY,
-                parameters,
-                filmGenreRelationRowMapper
+        List<FilmGenreRelation> relations = jdbc.query(
+                finalSql,
+                filmGenreRelationRowMapper,
+                filmIds.toArray()
         );
+
 
         Map<Long, List<Genre>> genresByFilmId = relations.stream()
                 .collect(groupingBy(
@@ -387,22 +387,26 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     private void setDirectorForFilm(List<Film> films) {
+        if (films == null || films.isEmpty()) {
+            return;
+        }
         List<Long> filmIds = films.stream()
                 .map(Film::getId)
+                .distinct()
                 .collect(Collectors.toList());
 
         if (filmIds.isEmpty()) {
             return;
         }
 
-        MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("filmIds", filmIds);
+        String placeholders = String.join(",", Collections.nCopies(filmIds.size(), "?"));
+        String finalSql = FIND_DIRECTOR_FOR_FILMS_QUERY + " IN (" + placeholders + ")";
 
 
-        List<FilmDirectorRelation> relations = namedJdbcTemplate.query(
-                FIND_DIRECTOR_FOR_FILMS_QUERY,
-                parameters,
-                filmDirectorRelationRowMapper
+        List<FilmDirectorRelation> relations = jdbc.query(
+                finalSql,
+                filmDirectorRelationRowMapper,
+                filmIds.toArray()
         );
 
         Map<Long, List<Director>> directorsByFilmId = relations.stream()

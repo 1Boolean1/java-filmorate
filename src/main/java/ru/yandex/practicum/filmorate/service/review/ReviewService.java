@@ -8,8 +8,8 @@ import ru.yandex.practicum.filmorate.dto.NewReviewRequest;
 import ru.yandex.practicum.filmorate.dto.ReviewDto;
 import ru.yandex.practicum.filmorate.dto.UpdateReviewRequest;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
-import ru.yandex.practicum.filmorate.exception.MethodArgumentNotValidException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ParameterNotValidException;
 import ru.yandex.practicum.filmorate.mappers.ReviewMapper;
 import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -45,7 +45,7 @@ public class ReviewService {
 
     public List<ReviewDto> getFilmReviews(long filmId, long count) {
         if (count <= 0) {
-            throw new MethodArgumentNotValidException("Count must be greater than 0");
+            throw new ParameterNotValidException("Count", "Must be greater than 0");
         }
 
         if (filmId == 0) {
@@ -81,12 +81,12 @@ public class ReviewService {
          */
         if (request.getUserId() == null) {
             log.error("Parameter UserId cannot be empty");
-            throw new MethodArgumentNotValidException("Parameter UserId cannot be empty");
+            throw new ParameterNotValidException("UserId", "Cannot be empty");
         }
 
         if (request.getFilmId() == null) {
             log.error("Parameter FilmId cannot be empty");
-            throw new MethodArgumentNotValidException("Parameter FilmId cannot be empty");
+            throw new ParameterNotValidException("FilmId", "Cannot be empty");
         }
 
         if (request.getUserId() < 0) {
