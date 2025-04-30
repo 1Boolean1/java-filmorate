@@ -1,16 +1,19 @@
 package ru.yandex.practicum.filmorate.service.user;
 
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.EmptyFieldException;
+import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mappers.UserMapper;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.Operation;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.feed.FeedService;
 import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
 
 import java.util.ArrayList;
@@ -23,10 +26,12 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
     private final UserDbStorage userDbStorage;
+    private final FeedService feedService;
 
-    @Autowired // Внедрение зависимостей через конструктор
-    public UserService(UserDbStorage userDbStorage) {
+    @Autowired
+    public UserService(UserDbStorage userDbStorage, FeedService feedService) {
         this.userDbStorage = userDbStorage;
+        this.feedService = feedService;
     }
 
     public void addFriend(long firstUserId, long secondUserId) {
@@ -37,6 +42,7 @@ public class UserService {
         if (!userDbStorage.getFriends(firstUserId).contains(secondUserId)) {
             log.debug("add friends");
             userDbStorage.addFriend(firstUserId, secondUserId);
+            feedService.logEvent(firstUserId, EventType.FRIEND, Operation.ADD, secondUserId);
         } else if (userDbStorage.getFriends(firstUserId).contains(secondUserId)) {
             log.warn("the friendship was already created");
             throw new RuntimeException("the friendship was already created");
@@ -54,6 +60,7 @@ public class UserService {
         if (userDbStorage.getFriends(firstUserId).contains(secondUserId)) {
             log.debug("delete friends");
             userDbStorage.deleteFriend(firstUserId, secondUserId);
+            feedService.logEvent(firstUserId, EventType.FRIEND, Operation.REMOVE, secondUserId);
         }
     }
 
@@ -104,15 +111,17 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    public UserDto addUser(User user) {
-        if (user.getName() == null) {
+    public UserDto addUser(UserDto userDto) {
+        User user = UserMapper.mapToUser(userDto);
+        if (user.getName() == null || user.getName().isBlank()) {
             log.debug("Username is empty, using login as name");
             user.setName(user.getLogin());
         }
         return UserMapper.mapToUserDto(userDbStorage.addUser(user));
     }
 
-    public UserDto updateUser(@RequestBody @Valid User user) {
+    public UserDto updateUser(UserDto userDto) {
+        User user = UserMapper.mapToUser(userDto);
         if (user.getId() == 0) {
             log.warn("User id is empty");
             throw new EmptyFieldException("ID can't be empty");
@@ -126,6 +135,20 @@ public class UserService {
     public UserDto getUserById(@PathVariable long id) {
         log.info("getUserById");
         return UserMapper.mapToUserDto(userDbStorage.getUserById(id));
+    }
+
+    @Transactional
+    public void deleteUser(long userId) {
+        UserDto userDto = getUserById(userId);
+        log.info("Deleting user: {}", userDto);
+
+        boolean isDeleted = userDbStorage.deleteUser(userId);
+
+        if (isDeleted) {
+            log.info("User deleted successfully");
+        } else {
+            throw new InternalServerException("User was not deleted due to internal server error");
+        }
     }
 
     private boolean isExistsUser(User user) {

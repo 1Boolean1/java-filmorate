@@ -5,7 +5,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
-import ru.yandex.practicum.filmorate.exception.ConstraintViolationException;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -38,7 +37,7 @@ public class BaseRepository<T> {
     protected void update(String query, Object... params) {
         int rowsUpdated = jdbc.update(query, params);
         if (rowsUpdated == 0) {
-            throw new ConstraintViolationException("Не удалось обновить данные");
+            throw new IllegalStateException("Не удалось обновить данные");
         }
     }
 
@@ -58,7 +57,7 @@ public class BaseRepository<T> {
         if (id != null) {
             return id;
         } else {
-            throw new ConstraintViolationException("Не удалось сохранить данные");
+            throw new IllegalStateException("Не удалось сохранить данные");
         }
     }
 }

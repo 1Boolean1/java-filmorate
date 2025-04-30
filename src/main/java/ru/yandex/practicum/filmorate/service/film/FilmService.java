@@ -8,21 +8,20 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.dto.RatingDto;
-import ru.yandex.practicum.filmorate.exception.ConstraintViolationException;
+import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ParameterNotValidException;
 import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.mappers.GenreMapper;
 import ru.yandex.practicum.filmorate.mappers.RatingMapper;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Rating;
+import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.service.feed.FeedService;
 import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,6 +34,7 @@ public class FilmService {
 
     private final FilmDbStorage filmStorage;
     private final UserDbStorage userStorage;
+    private final FeedService feedService;
 
     public Collection<FilmDto> getFilms() {
         log.info("Getting all films");
@@ -45,8 +45,9 @@ public class FilmService {
     }
 
     @Transactional
-    public FilmDto addFilm(Film film) {
-        log.info("Adding new film: {}", film);
+    public FilmDto addFilm(FilmDto filmDto) {
+        log.info("Adding new film: {}", filmDto);
+        Film film = FilmMapper.mapToFilmDto(filmDto);
         validateFilm(film);
         Film addedFilm = filmStorage.addFilm(film);
         log.info("Film added with id: {}", addedFilm.getId());
@@ -78,6 +79,7 @@ public class FilmService {
         userExists(userId);
         filmStorage.addLike(filmId, userId);
         log.info("Like added successfully");
+        feedService.logEvent(userId, EventType.LIKE, Operation.ADD, filmId);
     }
 
     @Transactional
@@ -87,25 +89,22 @@ public class FilmService {
         userExists(userId);
         filmStorage.removeLike(filmId, userId);
         log.info("Like removed successfully");
+        feedService.logEvent(userId, EventType.LIKE, Operation.REMOVE, filmId);
     }
 
-    public List<FilmDto> getTopFilms(int count) {
-        log.info("Getting top {} popular films", count);
+    @Transactional
+    public List<FilmDto> getTopFilms(int count, int genreId, int year) {
+        log.info("Getting top {} popular films with genreId = {} and release year = {}", count, genreId, year);
         if (count <= 0) {
             throw new ValidationException("Count parameter must be positive.");
         }
-        Collection<Film> allFilms = filmStorage.getFilms();
-
-        return allFilms.stream()
+        return filmStorage.getTopFilms(count, genreId, year)
+                .stream()
                 .map(film -> {
                     Set<Long> likes = filmStorage.getLikes(film.getId());
-                    return Map.entry(film, likes.size());
+                    return FilmMapper.mapToFilmDto(film, likes);
                 })
-                .sorted(Map.Entry.<Film, Integer>comparingByValue().reversed())
-                .limit(count)
-                .map(Map.Entry::getKey)
-                .map(film -> FilmMapper.mapToFilmDto(film, filmStorage.getLikes(film.getId())))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public Collection<GenreDto> getGenres() {
@@ -134,10 +133,48 @@ public class FilmService {
         return RatingMapper.mapToRatingDto(rating);
     }
 
+
+    public List<FilmDto> getCommonFilms(long userId, long friendId) {
+        userExists(userId);
+        userExists(friendId);
+        if (userId == friendId) {
+            throw new ParameterNotValidException("Data", "Id's can't be the same");
+        }
+        log.info("Getting MPA common films for users: {}, {}", userId, friendId);
+        Collection<Film> films = filmStorage.getCommonFilms(userId, friendId);
+        return films.stream()
+                .map(film -> FilmMapper.mapToFilmDto(film, filmStorage.getLikes(film.getId())))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteFilm(long filmId) {
+        FilmDto filmDto = getFilmById(filmId);
+        log.info("Deleting film: {}", filmDto);
+
+        boolean isDeleted = filmStorage.deleteFilm(filmId);
+
+        if (isDeleted) {
+            log.info("Film deleted successfully");
+        } else {
+            throw new InternalServerException("Film was not deleted due to internal error.");
+        }
+
+    }
+
+    public List<FilmDto> getRecommendations(long id) {
+        userExists(id);
+        log.info("Getting recommendations films for user with id = {}", id);
+        Collection<Film> films = filmStorage.getRecommendations(id);
+        return films.stream()
+                .map(film -> FilmMapper.mapToFilmDto(film, filmStorage.getLikes(film.getId())))
+                .collect(Collectors.toList());
+    }
+
     private void validateFilm(Film film) {
         if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
             log.warn("Validation failed");
-            throw new ConstraintViolationException("Film release date cannot be earlier than " + MIN_RELEASE_DATE);
+            throw new ParameterNotValidException("Data", "Film release date cannot be earlier than " + MIN_RELEASE_DATE);
         }
     }
 
@@ -148,4 +185,26 @@ public class FilmService {
     private void filmExists(long filmId) {
         filmStorage.getFilmById(filmId);
     }
+
+    public List<FilmDto> findByDirector(long directorId, String sortMode) {
+        log.info("Getting films by director with id: {} and sort mode {}", directorId, sortMode);
+        Collection<Film> films = filmStorage.findByDirector(directorId, sortMode);
+        if (films.isEmpty()) {
+            log.error("No data found matching the specified parameters (id: {} and sort mode {})",
+                    directorId, sortMode);
+            throw new NotFoundException("No data found matching the specified parameters");
+        }
+        return films.stream()
+                .map(film -> FilmMapper.mapToFilmDto(film, filmStorage.getLikes(film.getId())))
+                .collect(Collectors.toList());
+    }
+
+    public List<FilmDto> searchFilms(String searchText, String searchBy) {
+        Collection<Film> films = filmStorage.searchFilms(searchText, searchBy);
+        log.info("Getting films by {} and search text {}", searchBy, searchText);
+        return films.stream()
+                .map(film -> FilmMapper.mapToFilmDto(film, filmStorage.getLikes(film.getId())))
+                .collect(Collectors.toList());
+    }
+
 }

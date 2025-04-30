@@ -28,6 +28,16 @@ public final class UserMapper {
         return dto;
     }
 
+    public static User mapToUser(UserDto userDto) {
+        User user = new User();
+        user.setId(userDto.getId());
+        user.setEmail(userDto.getEmail());
+        user.setLogin(userDto.getLogin());
+        user.setName(userDto.getName());
+        user.setBirthday(userDto.getBirthday());
+        return user;
+    }
+
     public static User updateUserFields(User user, UpdateUserRequest request) {
         if (request.hasEmail()) {
             user.setEmail(request.getEmail());

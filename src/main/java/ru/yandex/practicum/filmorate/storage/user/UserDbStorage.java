@@ -9,7 +9,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.util.Collection;
 import java.util.Set;
 
-@Qualifier
+@Qualifier("userDbStorage")
 @Repository
 public class UserDbStorage implements UserStorage {
     private final UserRepository repository;
@@ -36,6 +36,11 @@ public class UserDbStorage implements UserStorage {
     @Override
     public User getUserById(long userId) {
         return repository.findById(userId).orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
+    }
+
+    @Override
+    public boolean deleteUser(long userId) {
+        return repository.deleteUser(userId);
     }
 
     public Set<Long> getFriends(long userId) {

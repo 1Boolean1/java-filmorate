@@ -28,10 +28,19 @@ class FilmorateApplicationTests {
 
     @Test
     void testFindUserById_Success() {
-        long expectedId = 1L;
+        long expectedId;
         String expectedLogin = "testlogin";
         String expectedEmail = "test@user.com";
         LocalDate expectedBirthday = LocalDate.of(1991, 11, 11);
+
+        User user = new User();
+        user.setEmail(expectedEmail);
+        user.setLogin(expectedLogin);
+        user.setBirthday(expectedBirthday);
+        user.setName("Test User Name");
+
+        user = userStorage.addUser(user);
+        expectedId = user.getId();
 
         // Act
         User foundUser = assertDoesNotThrow(

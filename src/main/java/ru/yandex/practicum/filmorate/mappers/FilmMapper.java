@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.mappers;
 
 import lombok.experimental.UtilityClass;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
@@ -33,9 +34,18 @@ public class FilmMapper {
             film.setGenres(new ArrayList<>());
         }
 
+        if (requestFilm.getDirectors() != null) {
+            List<Director> directorsWithIdOnly = requestFilm.getDirectors()
+                    .stream()
+                    .filter(d -> d != null && d.getId() != 0)
+                    .collect(Collectors.toList());
+            film.setDirectors(directorsWithIdOnly);
+        } else {
+            film.setDirectors(new ArrayList<>());
+        }
+
         return film;
     }
-
 
     public static FilmDto mapToFilmDto(Film film, Set<Long> likes) {
         if (film == null) return null;
@@ -48,7 +58,24 @@ public class FilmMapper {
         dto.setMpa(RatingMapper.mapToRatingDto(film.getMpa()));
         dto.setGenres(GenreMapper.mapToGenreDtoList(film.getGenres()));
         dto.setLikes(Optional.ofNullable(likes).orElse(Collections.emptySet()));
+        dto.setDirectors(DirectorMapper.mapToDirectorDtoList(film.getDirectors()));
         return dto;
+    }
+
+
+    public static Film mapToFilmDto(FilmDto filmDto) {
+        if (filmDto == null) return null;
+        Film film = new Film();
+        film.setId(filmDto.getId());
+        film.setName(filmDto.getName());
+        film.setDescription(filmDto.getDescription());
+        film.setReleaseDate(filmDto.getReleaseDate());
+        film.setDuration(filmDto.getDuration());
+        film.setMpa(RatingMapper.mapToRating(filmDto.getMpa()));
+        film.setGenres(GenreMapper.mapToGenreList(filmDto.getGenres()));
+        //film.setLikes(Optional.ofNullable(likes).orElse(Collections.emptySet()));
+        film.setDirectors(DirectorMapper.mapToDirectorList(filmDto.getDirectors()));
+        return film;
     }
 
     public static FilmDto mapToFilmDto(Film film) {

@@ -5,9 +5,9 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.film.FilmService;
 
@@ -18,7 +18,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/films")
 @RequiredArgsConstructor
-@Validated
 public class FilmController {
 
     private final FilmService filmService;
@@ -31,14 +30,15 @@ public class FilmController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public FilmDto addFilm(@Valid @RequestBody Film film) {
+    public FilmDto addFilm(@Valid @RequestBody FilmDto film) {
         log.info("Received POST /films request with body: {}", film);
         return filmService.addFilm(film);
     }
 
     @PutMapping
-    public FilmDto updateFilm(@Valid @RequestBody Film film) {
-        log.info("Received PUT /films request with body: {}", film);
+    public FilmDto updateFilm(@Valid @RequestBody FilmDto filmDto) {
+        log.info("Received PUT /films request with body: {}", filmDto);
+        Film film = FilmMapper.mapToFilmDto(filmDto);
         return filmService.updateFilm(film);
     }
 
@@ -56,15 +56,45 @@ public class FilmController {
     }
 
     @DeleteMapping("/{filmId}/like/{userId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteLikeToFilm(@PathVariable long filmId, @PathVariable long userId) {
         log.info("Received DELETE /films/{}/like/{} request", filmId, userId);
         filmService.deleteLikeToFilm(filmId, userId);
     }
 
     @GetMapping("/popular")
-    public List<FilmDto> getTopFilms(@RequestParam(defaultValue = "10") @Positive(message = "Count must be positive") int count) {
-        log.info("Received GET /films/popular?count={} request", count);
-        return filmService.getTopFilms(count);
+    public List<FilmDto> getTopFilms(@RequestParam(defaultValue = "10") @Positive(message = "Count must be positive") int count,
+                                     @RequestParam(defaultValue = "-1") int genreId,
+                                     @RequestParam(defaultValue = "-1") int year) {
+        log.info("Received GET /films/popular?count={}&genreId={}&year={} request", count, genreId, year);
+        return filmService.getTopFilms(count, genreId, year);
+    }
+
+    @DeleteMapping("/{filmId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFilm(@PathVariable long filmId) {
+        log.info("Received DELETE /films/{} request", filmId);
+        filmService.deleteFilm(filmId);
+    }
+
+    @GetMapping("/common")
+    public List<FilmDto> getCommonFilms(
+            @RequestParam long userId,
+            @RequestParam long friendId) {
+        log.info("GET common films for userId={} and friendId={}", userId, friendId);
+        return filmService.getCommonFilms(userId, friendId);
+    }
+
+    @GetMapping("/director/{directorId}")
+    public List<FilmDto> findByDirector(@PathVariable long directorId,
+                                        @RequestParam(name = "sortBy") String sortMode) {
+        log.info("Received GET /films/director/{}?sortBy={} request", directorId, sortMode);
+        return filmService.findByDirector(directorId, sortMode);
+    }
+
+    @GetMapping("/search")
+    public List<FilmDto> searchFilms(@RequestParam String query,
+                                     @RequestParam String by) {
+        log.info("GET /films/search?query={}&by={}", query, by);
+        return filmService.searchFilms(query, by);
     }
 }
