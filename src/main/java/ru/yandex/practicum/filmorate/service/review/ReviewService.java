@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.dto.NewReviewRequest;
 import ru.yandex.practicum.filmorate.dto.ReviewDto;
 import ru.yandex.practicum.filmorate.dto.UpdateReviewRequest;
@@ -76,7 +75,6 @@ public class ReviewService {
                 .orElseThrow(() -> new NotFoundException("Review with ID " + reviewId + " not found"));
     }
 
-    @Transactional
     public ReviewDto addReview(@Valid NewReviewRequest request) {
         /*
         Ручная обработка из-за специфичных postman тестов
@@ -108,7 +106,6 @@ public class ReviewService {
         return reviewDto;
     }
 
-    @Transactional
     public ReviewDto updateReview(@Valid UpdateReviewRequest request) {
         Review updatedReview = reviewStorage.getReviewById(request.getReviewId())
                 .map(review -> ReviewMapper.updateReviewFields(review, request))
@@ -118,7 +115,6 @@ public class ReviewService {
         return ReviewMapper.mapToReviewDto(updatedReview);
     }
 
-    @Transactional
     public void deleteReview(long reviewId) {
         ReviewDto reviewDto = getReviewById(reviewId);
         log.info("Deleting review: {}", reviewDto);
@@ -132,7 +128,6 @@ public class ReviewService {
         }
     }
 
-    @Transactional
     public void likeReview(long reviewId, long userId) {
         checkReviewAndUser(reviewId, userId);
         log.info("User with userId = {} wants to like review with reviewId = : {}", userId, reviewId);
@@ -146,7 +141,6 @@ public class ReviewService {
         }
     }
 
-    @Transactional
     public void removeLike(long reviewId, long userId) {
         checkReviewAndUser(reviewId, userId);
         log.info("User with userId = {} wants to remove like from review with reviewId = {}", userId, reviewId);
@@ -160,7 +154,6 @@ public class ReviewService {
         }
     }
 
-    @Transactional
     public void dislikeReview(long reviewId, long userId) {
         checkReviewAndUser(reviewId, userId);
         log.info("User with userId = {} wants to dislike review with reviewId = {}", userId, reviewId);
@@ -174,7 +167,6 @@ public class ReviewService {
         }
     }
 
-    @Transactional
     public void removeDislike(long reviewId, long userId) {
         checkReviewAndUser(reviewId, userId);
         log.info("User with userId = {} wants to remove dislike from review with reviewId = {}", userId, reviewId);

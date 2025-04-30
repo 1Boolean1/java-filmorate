@@ -14,17 +14,12 @@ public class GenreRepository extends BaseRepository<Genre> {
     private static final String GET_GENRE_BY_ID = "SELECT id, name FROM genre WHERE id = ?";
     private static final String FIND_GENRES_BY_FILM_ID_QUERY =
             "SELECT g.id, g.name " +
-                    "FROM genre g JOIN film_genre fg ON g.id = fg.genre_id " +
-                    "WHERE fg.film_id = ? " +
-                    "ORDER BY g.id ASC";
-
-    private final JdbcTemplate jdbc;
-    private final GenreRowMapper genreMapper;
+            "FROM genre g JOIN film_genre fg ON g.id = fg.genre_id " +
+            "WHERE fg.film_id = ? " +
+            "ORDER BY g.id ASC";
 
     public GenreRepository(JdbcTemplate jdbc, GenreRowMapper mapper) {
         super(jdbc, mapper);
-        this.jdbc = jdbc;
-        this.genreMapper = mapper;
     }
 
     public List<Genre> findAll() {
@@ -36,7 +31,6 @@ public class GenreRepository extends BaseRepository<Genre> {
     }
 
     public List<Genre> findGenresByFilmId(long filmId) {
-        List<Genre> genres = jdbc.query(FIND_GENRES_BY_FILM_ID_QUERY, genreMapper, filmId);
-        return genres;
+        return findMany(FIND_GENRES_BY_FILM_ID_QUERY, filmId);
     }
 }

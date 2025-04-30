@@ -24,8 +24,8 @@ public class ReviewController {
 
     @GetMapping
     public List<ReviewDto> getFilmReviews(@RequestParam(defaultValue = "0") long filmId,
-                                        @RequestParam(defaultValue = "10")
-                                        @Positive(message = "Count must be positive") long count) {
+                                          @RequestParam(defaultValue = "10")
+                                          @Positive(message = "Count must be positive") long count) {
         log.info("Received GET {} reviews for film with ID = {}", count, filmId);
         return reviewService.getFilmReviews(filmId, count);
     }

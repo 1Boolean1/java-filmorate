@@ -24,6 +24,13 @@ public class DirectorMapper {
         return directorDto;
     }
 
+    public static Director toDirectorDTO(DirectorDto directorDto) {
+        Director director = new Director();
+        director.setId(directorDto.getId());
+        director.setName(directorDto.getName());
+        return director;
+    }
+
     public static List<DirectorDto> mapToDirectorDtoList(List<Director> directors) {
         if (directors == null || directors.isEmpty()) {
             return Collections.emptyList();

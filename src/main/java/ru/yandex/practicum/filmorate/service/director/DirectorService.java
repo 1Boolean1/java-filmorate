@@ -32,15 +32,17 @@ public class DirectorService {
         return DirectorMapper.mapToDirectorDto(director);
     }
 
-    public DirectorDto addDirector(Director director) {
-        log.info("Adding new director: {}", director.getName());
+    public DirectorDto addDirector(DirectorDto directorDto) {
+        log.info("Adding new director: {}", directorDto.getName());
+        Director director = DirectorMapper.toDirectorDTO(directorDto);
         Director newDirector = directorStorage.addDirector(director);
-        log.info("Director {} added with id: {}", director.getName(), director.getId());
-        return DirectorMapper.mapToDirectorDto(director);
+        log.info("Director {} added with id: {}", newDirector.getName(), newDirector.getId());
+        return DirectorMapper.mapToDirectorDto(newDirector);
     }
 
-    public DirectorDto updateDirector(Director director) {
-        log.info("Updating director with id: {}", director.getId());
+    public DirectorDto updateDirector(DirectorDto directorDto) {
+        log.info("Updating director with id: {}", directorDto.getId());
+        Director director = DirectorMapper.toDirectorDTO(directorDto);
         Director updateDirector = directorStorage.updateDirector(director);
         log.info("Director {} with id: {} updated", updateDirector.getName(), updateDirector.getId());
         return DirectorMapper.mapToDirectorDto(updateDirector);
