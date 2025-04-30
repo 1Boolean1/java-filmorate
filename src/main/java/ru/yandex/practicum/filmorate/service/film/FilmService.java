@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.dto.RatingDto;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ParameterNotValidException;
 import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.mappers.GenreMapper;
 import ru.yandex.practicum.filmorate.mappers.RatingMapper;
@@ -136,7 +137,7 @@ public class FilmService {
         userExists(userId);
         userExists(friendId);
         if (userId == friendId) {
-            throw new IllegalStateException("Id's can't be the same");
+            throw new ParameterNotValidException("Data", "Id's can't be the same");
         }
         log.info("Getting MPA common films for users: {}, {}", userId, friendId);
         Collection<Film> films = filmStorage.getCommonFilms(userId, friendId);
@@ -172,7 +173,7 @@ public class FilmService {
     private void validateFilm(Film film) {
         if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
             log.warn("Validation failed");
-            throw new IllegalStateException("Film release date cannot be earlier than " + MIN_RELEASE_DATE);
+            throw new ParameterNotValidException("Data", "Film release date cannot be earlier than " + MIN_RELEASE_DATE);
         }
     }
 
