@@ -47,7 +47,6 @@ public class FilmMapper {
         return film;
     }
 
-
     public static FilmDto mapToFilmDto(Film film, Set<Long> likes) {
         if (film == null) return null;
         FilmDto dto = new FilmDto();
@@ -61,6 +60,22 @@ public class FilmMapper {
         dto.setLikes(Optional.ofNullable(likes).orElse(Collections.emptySet()));
         dto.setDirectors(DirectorMapper.mapToDirectorDtoList(film.getDirectors()));
         return dto;
+    }
+
+
+    public static Film mapToFilmDto(FilmDto filmDto) {
+        if (filmDto == null) return null;
+        Film film = new Film();
+        film.setId(filmDto.getId());
+        film.setName(filmDto.getName());
+        film.setDescription(filmDto.getDescription());
+        film.setReleaseDate(filmDto.getReleaseDate());
+        film.setDuration(filmDto.getDuration());
+        film.setMpa(RatingMapper.mapToRating(filmDto.getMpa()));
+        film.setGenres(GenreMapper.mapToGenreList(filmDto.getGenres()));
+        //film.setLikes(Optional.ofNullable(likes).orElse(Collections.emptySet()));
+        film.setDirectors(DirectorMapper.mapToDirectorList(filmDto.getDirectors()));
+        return film;
     }
 
     public static FilmDto mapToFilmDto(Film film) {

@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.UserDto;
-import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.feed.FeedService;
 import ru.yandex.practicum.filmorate.service.film.FilmService;
 import ru.yandex.practicum.filmorate.service.user.UserService;
@@ -36,13 +35,13 @@ public class UserController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public UserDto addUser(@RequestBody @Valid User user) {
+    public UserDto addUser(@RequestBody @Valid UserDto user) {
         log.info("addUser");
         return userService.addUser(user);
     }
 
     @PutMapping
-    public UserDto updateUser(@RequestBody @Valid User user) {
+    public UserDto updateUser(@RequestBody @Valid UserDto user) {
         log.info("updateUser");
         System.out.println(user);
         return userService.updateUser(user);

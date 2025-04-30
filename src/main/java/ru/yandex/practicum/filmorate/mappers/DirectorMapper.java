@@ -40,4 +40,13 @@ public class DirectorMapper {
                 .collect(Collectors.toList());
     }
 
+    public static List<Director> mapToDirectorList(List<DirectorDto> directorDtos) {
+        if (directorDtos == null || directorDtos.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return directorDtos.stream()
+                .map(DirectorMapper::toDirectorDTO)
+                .collect(Collectors.toList());
+    }
+
 }

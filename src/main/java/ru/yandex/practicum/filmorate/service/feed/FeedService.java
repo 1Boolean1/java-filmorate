@@ -5,7 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.dal.FeedRepository;
+import ru.yandex.practicum.filmorate.dto.EventDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.mappers.EventMapper;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.Operation;
@@ -24,14 +26,14 @@ public class FeedService {
     }
 
     @Transactional
-    public List<Event> getUsersEventFeed(long userId) {
+    public List<EventDto> getUsersEventFeed(long userId) {
         log.info("Обработка запроса на получение ленты событий пользователя с userId = {}", userId);
         List<Event> events = feedRepository.getUsersEventFeed(userId);
         if (events.isEmpty()) {
             log.error("No data found");
             throw new NotFoundException("No data found");
         }
-        return events;
+        return EventMapper.mapToEventDtoList(events);
     }
 
     @Transactional

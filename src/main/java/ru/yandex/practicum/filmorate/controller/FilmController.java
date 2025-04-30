@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.film.FilmService;
 
@@ -29,14 +30,15 @@ public class FilmController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public FilmDto addFilm(@Valid @RequestBody Film film) {
+    public FilmDto addFilm(@Valid @RequestBody FilmDto film) {
         log.info("Received POST /films request with body: {}", film);
         return filmService.addFilm(film);
     }
 
     @PutMapping
-    public FilmDto updateFilm(@Valid @RequestBody Film film) {
-        log.info("Received PUT /films request with body: {}", film);
+    public FilmDto updateFilm(@Valid @RequestBody FilmDto filmDto) {
+        log.info("Received PUT /films request with body: {}", filmDto);
+        Film film = FilmMapper.mapToFilmDto(filmDto);
         return filmService.updateFilm(film);
     }
 

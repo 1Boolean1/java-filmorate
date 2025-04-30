@@ -45,8 +45,9 @@ public class FilmService {
     }
 
     @Transactional
-    public FilmDto addFilm(Film film) {
-        log.info("Adding new film: {}", film);
+    public FilmDto addFilm(FilmDto filmDto) {
+        log.info("Adding new film: {}", filmDto);
+        Film film = FilmMapper.mapToFilmDto(filmDto);
         validateFilm(film);
         Film addedFilm = filmStorage.addFilm(film);
         log.info("Film added with id: {}", addedFilm.getId());

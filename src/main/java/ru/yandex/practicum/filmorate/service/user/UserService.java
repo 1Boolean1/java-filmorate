@@ -1,12 +1,10 @@
 package ru.yandex.practicum.filmorate.service.user;
 
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.EmptyFieldException;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
@@ -113,7 +111,8 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    public UserDto addUser(User user) {
+    public UserDto addUser(UserDto userDto) {
+        User user = UserMapper.mapToUser(userDto);
         if (user.getName() == null || user.getName().isBlank()) {
             log.debug("Username is empty, using login as name");
             user.setName(user.getLogin());
@@ -121,7 +120,8 @@ public class UserService {
         return UserMapper.mapToUserDto(userDbStorage.addUser(user));
     }
 
-    public UserDto updateUser(@RequestBody @Valid User user) {
+    public UserDto updateUser(UserDto userDto) {
+        User user = UserMapper.mapToUser(userDto);
         if (user.getId() == 0) {
             log.warn("User id is empty");
             throw new EmptyFieldException("ID can't be empty");
